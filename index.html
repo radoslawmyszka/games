@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AtlasPing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="play-area" aria-label="Mapa gry">
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">Codzienna zagadka geograficzna</p>
+            <h1>AtlasPing</h1>
+          </div>
+          <div class="top-actions">
+            <select class="language-select" id="languageSelect" aria-label="Język" title="Język">
+              <option value="pl">PL</option>
+              <option value="en">EN</option>
+              <option value="de">DE</option>
+              <option value="es">ES</option>
+              <option value="fr">FR</option>
+              <option value="uk">UA</option>
+            </select>
+            <button class="icon-button" id="newGameButton" type="button" aria-label="Nowa gra" title="Nowa gra">
+              ↻
+            </button>
+            <button class="icon-button" id="themeButton" type="button" aria-label="Zmień motyw" title="Zmień motyw">
+              ◐
+            </button>
+          </div>
+        </div>
+
+        <div class="globe-stage">
+          <canvas id="globeCanvas" width="900" height="900" aria-label="Interaktywny globus z próbami"></canvas>
+          <div class="globe-shadow"></div>
+          <div class="compass" aria-hidden="true">
+            <span>N</span>
+            <span>E</span>
+            <span>S</span>
+            <span>W</span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="control-panel" aria-label="Panel gry">
+        <div class="status-block">
+          <p class="panel-kicker">Znajdź ukryty kraj</p>
+          <h2 id="statusTitle">Wpisz pierwszy strzał</h2>
+          <p id="statusText">Po każdej próbie zobaczysz odległość, kierunek i kolor temperatury.</p>
+        </div>
+
+        <form class="guess-form" id="guessForm" autocomplete="off">
+          <label for="guessInput">Kraj</label>
+          <div class="input-row">
+            <input
+              id="guessInput"
+              name="guess"
+              type="text"
+              list="countryList"
+              placeholder="np. Polska"
+              spellcheck="false"
+              aria-describedby="inputHelp"
+            />
+            <button type="submit">Strzał</button>
+          </div>
+          <datalist id="countryList"></datalist>
+          <p id="inputHelp" class="form-help">Enter zatwierdza. Im cieplejszy kolor, tym bliżej celu.</p>
+        </form>
+
+        <div class="metrics-grid">
+          <div class="metric">
+            <span>Próby</span>
+            <strong id="guessCount">0</strong>
+          </div>
+          <div class="metric">
+            <span>Najbliżej</span>
+            <strong id="bestDistance">-</strong>
+          </div>
+          <div class="metric">
+            <span>Kierunek</span>
+            <strong id="bearingText">-</strong>
+          </div>
+        </div>
+
+        <section class="heat-section" aria-label="Skala bliskości">
+          <div class="section-head">
+            <h3>Temperatura</h3>
+            <span id="heatLabel">Brak prób</span>
+          </div>
+          <div class="heatbar" aria-hidden="true">
+            <span></span>
+          </div>
+        </section>
+
+        <section class="history-section" aria-label="Historia prób">
+          <div class="section-head">
+            <h3>Historia</h3>
+            <span id="remainingCount"></span>
+          </div>
+          <ol id="guessHistory" class="guess-history"></ol>
+          <div id="emptyHistory" class="empty-state">
+            Pierwszy strzał ustawi mapę i pokaże, czy jesteś zimno czy gorąco.
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
