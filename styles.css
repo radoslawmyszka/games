@@ -186,6 +186,23 @@ h1 {
   filter: blur(18px);
 }
 
+.zoom-controls {
+  position: absolute;
+  left: clamp(1rem, 4vw, 4rem);
+  bottom: clamp(1rem, 6vw, 5rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  z-index: 2;
+}
+
+.zoom-button {
+  width: 2.4rem;
+  height: 2.4rem;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
 .compass {
   position: absolute;
   right: clamp(1rem, 4vw, 4rem);

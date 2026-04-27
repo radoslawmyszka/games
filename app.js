@@ -443,8 +443,16 @@ const state = {
   borders: null,
   dragging: false,
   lastX: 0,
+  lastY: 0,
   won: false,
+  zoom: 1,
 };
+
+const ZOOM_MIN = 0.6;
+const ZOOM_MAX = 6;
+const activePointers = new Map();
+let pinchStartDist = 0;
+let pinchStartZoom = 1;
 
 let toastTimer;
 let animationFrame;
@@ -851,7 +859,7 @@ function drawGlobe() {
     const height = canvas.height;
     const centerX = width / 2;
     const centerY = height / 2;
-    const radius = width * 0.43;
+    const radius = width * 0.43 * state.zoom;
     const ocean = getComputedStyle(document.documentElement).getPropertyValue("--ocean").trim();
     const oceanDeep = getComputedStyle(document.documentElement).getPropertyValue("--ocean-deep").trim();
     const projection = createProjection(radius, centerX, centerY);
@@ -970,23 +978,71 @@ async function loadWorldMap() {
   }
 }
 
+function setZoom(next) {
+  const clamped = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, next));
+  if (clamped === state.zoom) return;
+  state.zoom = clamped;
+  drawGlobe();
+}
+
 function onPointerDown(event) {
-  state.dragging = true;
-  state.lastX = event.clientX;
   canvas.setPointerCapture(event.pointerId);
+  activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  if (activePointers.size === 2) {
+    const [a, b] = [...activePointers.values()];
+    pinchStartDist = Math.hypot(a.x - b.x, a.y - b.y);
+    pinchStartZoom = state.zoom;
+    state.dragging = false;
+  } else {
+    state.dragging = true;
+    state.lastX = event.clientX;
+    state.lastY = event.clientY;
+  }
 }
 
 function onPointerMove(event) {
+  if (!activePointers.has(event.pointerId)) return;
+  activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+  if (activePointers.size === 2) {
+    const [a, b] = [...activePointers.values()];
+    const dist = Math.hypot(a.x - b.x, a.y - b.y);
+    if (pinchStartDist > 0) setZoom(pinchStartZoom * (dist / pinchStartDist));
+    return;
+  }
+
   if (!state.dragging) return;
-  const delta = event.clientX - state.lastX;
+  const dx = event.clientX - state.lastX;
+  const dy = event.clientY - state.lastY;
   state.lastX = event.clientX;
-  state.rotation += delta * 0.25;
+  state.lastY = event.clientY;
+  const speed = 0.25 / state.zoom;
+  state.rotation += dx * speed;
+  state.tilt = Math.max(-89, Math.min(89, state.tilt - dy * speed));
   drawGlobe();
 }
 
 function onPointerUp(event) {
-  state.dragging = false;
-  canvas.releasePointerCapture(event.pointerId);
+  activePointers.delete(event.pointerId);
+  if (activePointers.size < 2) {
+    pinchStartDist = 0;
+  }
+  if (activePointers.size === 0) {
+    state.dragging = false;
+  }
+  if (canvas.hasPointerCapture?.(event.pointerId)) {
+    canvas.releasePointerCapture(event.pointerId);
+  }
+}
+
+function onWheel(event) {
+  event.preventDefault();
+  const factor = Math.exp(-event.deltaY * 0.0015);
+  setZoom(state.zoom * factor);
+}
+
+function onDoubleClick() {
+  setZoom(state.zoom > 1.05 ? 1 : 2);
 }
 
 form.addEventListener("submit", submitGuess);
@@ -994,6 +1050,13 @@ canvas.addEventListener("pointerdown", onPointerDown);
 canvas.addEventListener("pointermove", onPointerMove);
 canvas.addEventListener("pointerup", onPointerUp);
 canvas.addEventListener("pointercancel", onPointerUp);
+canvas.addEventListener("wheel", onWheel, { passive: false });
+canvas.addEventListener("dblclick", onDoubleClick);
+canvas.style.touchAction = "none";
+
+document.querySelector("#zoomInButton")?.addEventListener("click", () => setZoom(state.zoom * 1.4));
+document.querySelector("#zoomOutButton")?.addEventListener("click", () => setZoom(state.zoom / 1.4));
+document.querySelector("#zoomResetButton")?.addEventListener("click", () => setZoom(1));
 
 document.querySelector("#newGameButton").addEventListener("click", () => {
   resetGame(newRandomCountry());
